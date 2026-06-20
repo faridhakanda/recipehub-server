@@ -34,7 +34,7 @@ async function run() {
         const DB = client.db('RecipeHubDB');
         
         const userCollection = DB.collection('user');
-        const recipeCollection = DB.collection('recipe');
+        const recipeCollection = DB.collection('recipes');
 
         // here all api for the recipehub project
         app.get('/api/users', async(req, res) => {
