@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
 
 
 //  here to start all of api with mongodb
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGODB_URL;
 
 const client = new MongoClient(uri, {
@@ -34,6 +34,7 @@ async function run() {
         const DB = client.db('RecipeHubDB');
         
         const userCollection = DB.collection('user');
+        const recipeCollection = DB.collection('recipe');
 
         // here all api for the recipehub project
         app.get('/api/users', async(req, res) => {
@@ -41,7 +42,27 @@ async function run() {
             const users = await allUsers.toArray();
             res.send(users);
         })
+        
 
+        // recipe crud operation
+        app.get('/api/my/recipe', async(req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const recipe = await recipeCollection.find(query);
+            const result = await recipe.toArray();
+            res.send(result);
+        })
+        app.post('/api/recipe', async(req, res) => {
+            const recipe = req.body;
+            const newRecipe = {
+                ...recipe,
+                createdAt: new Date()
+            }
+            const result = await recipeCollection.insertOne(newRecipe);
+            res.send(result);
+        })
 
         console.log("Pinged your deployment. You successfully connected your MongoDB!");
     } finally {
