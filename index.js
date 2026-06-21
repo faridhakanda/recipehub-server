@@ -35,6 +35,8 @@ async function run() {
         
         const userCollection = DB.collection('user');
         const recipeCollection = DB.collection('recipes');
+        const plansCollection = DB.collection('plans');
+        const subscriptionCollection = DB.collection('subscriptions');
 
         // here all api for the recipehub project
         app.get('/api/users', async(req, res) => {
@@ -42,6 +44,8 @@ async function run() {
             const users = await allUsers.toArray();
             res.send(users);
         })
+        
+
         
 
         // recipe crud operation
@@ -58,10 +62,39 @@ async function run() {
             const recipe = req.body;
             const newRecipe = {
                 ...recipe,
-                createdAt: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             }
             const result = await recipeCollection.insertOne(newRecipe);
             res.send(result);
+        })
+        
+
+        // user plan and subscription api
+        // get plan
+        app.get('/api/plans', async(req, res) => {
+            const result = await plansCollection.find();
+            const planData = await result.toArray();
+            res.send(planData);
+        })
+        // subscription api
+        app.post('/api/subscriptions', async(req, res) => {
+            const data = req.body;
+            const subscriberInformation = {
+                ...data,
+                createdAt: new Date()
+            }
+            const result = await subscriptionCollection.insertOne(subscriberInformation);
+
+            const fileterUser = { email: data.email };
+            const userPlanUpdate = {
+                $set: {
+                    plan: data.planId
+                },
+            }
+            const updatedUserPlan = await userCollection.updateOne(fileterUser, userPlanUpdate);
+            res.send(updatedUserPlan);
+
         })
 
         console.log("Pinged your deployment. You successfully connected your MongoDB!");
