@@ -73,9 +73,21 @@ async function run() {
         // user plan and subscription api
         // get plan
         app.get('/api/plans', async(req, res) => {
-            const result = await plansCollection.find();
-            const planData = await result.toArray();
-            res.send(planData);
+            // below code is show all plans
+            // const result = await plansCollection.find();
+            // const planData = await result.toArray();
+            // res.send(planData);
+
+            // now show only specific id plan
+            const query = {};
+            if (req.query.id) {
+                query.id = req.query.id
+            }
+            const plan = await plansCollection.findOne(query);
+            // if (!plan) {
+            //     return res.json({ name: 'free', maxRecipePerUser: 2 });
+            // }
+            res.send(plan);
         })
         // subscription api
         app.post('/api/subscriptions', async(req, res) => {
@@ -89,7 +101,7 @@ async function run() {
             const fileterUser = { email: data.email };
             const userPlanUpdate = {
                 $set: {
-                    plan: data.planId
+                    plan: data.plan
                 },
             }
             const updatedUserPlan = await userCollection.updateOne(fileterUser, userPlanUpdate);
