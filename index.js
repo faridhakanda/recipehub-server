@@ -58,6 +58,20 @@ async function run() {
             const result = await recipe.toArray();
             res.send(result);
         })
+
+        app.get('/api/recipe', async(req, res) => {
+            const result = await recipeCollection.find();
+            const recipe = await result.toArray();
+            res.send(recipe);
+        })
+        app.get('/api/recipe/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const result = await recipeCollection.findOne(query);
+            res.send(result);
+        })
         app.post('/api/recipe', async(req, res) => {
             const recipe = req.body;
             const newRecipe = {
@@ -69,6 +83,19 @@ async function run() {
             res.send(result);
         })
         
+        // get user added recipe
+        app.get('/api/user-recipe', async(req, res) => {
+            const query = {}
+            if (req.query.userId) {
+                query.userId = req.query.userId;
+                if (req.user._id.toString() !== req.query.userId) {
+                    return res.status(403).send({ message: "Forbidden access!"});
+                }
+            }
+            const result = recipeCollection.find(query);
+            const recipes = await result.toArray();
+            res.send(recipes);
+        })
 
         // user plan and subscription api
         // get plan
@@ -94,19 +121,26 @@ async function run() {
             const data = req.body;
             const subscriberInformation = {
                 ...data,
+                userId: data.userId,
+                transactionId: data.transactionId || null,
+                subscriptionId: data.subscriptionId || null,
+                status: 'active',
                 createdAt: new Date()
             }
             const result = await subscriptionCollection.insertOne(subscriberInformation);
-
+            
             const fileterUser = { email: data.email };
             const userPlanUpdate = {
                 $set: {
-                    plan: data.plan
+                    plan: data.planId,
+                    subscriptionId: data.subscriptionId || null,
+                    updatedAt: new Date(),
+                    transactionId: data.transactionId || null
                 },
             }
             const updatedUserPlan = await userCollection.updateOne(fileterUser, userPlanUpdate);
             res.send(updatedUserPlan);
-
+        
         })
 
         console.log("Pinged your deployment. You successfully connected your MongoDB!");
