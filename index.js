@@ -66,10 +66,11 @@ async function run() {
         })
         app.get('/api/recipe/:id', async(req, res) => {
             const id = req.params.id;
-            const query = {
-                _id: new ObjectId(id)
-            }
-            const result = await recipeCollection.findOne(query);
+            // const query = {
+            //     _id: new ObjectId(id)
+            // }
+            //const { id } = await params;
+            const result = await recipeCollection.findOne({ _id: new ObjectId(id) });
             res.send(result);
         })
         app.post('/api/recipe', async(req, res) => {
