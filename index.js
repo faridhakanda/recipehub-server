@@ -40,6 +40,13 @@ async function run() {
         const recipeCollection = DB.collection('recipes');
         const plansCollection = DB.collection('plans');
         const subscriptionCollection = DB.collection('subscriptions');
+        
+        console.log('Now I will make it protected!');
+
+        const verifyToken = async(req, res, next) => {
+            console.log('headers: ', req.headers);
+        }
+        //verifyToken('83')
 
         // here all api for the recipehub project
         app.get('/api/users', async(req, res) => {
@@ -48,7 +55,7 @@ async function run() {
             res.send(users);
         })
         
-
+        
         
 
         // recipe crud operation
@@ -87,18 +94,18 @@ async function run() {
             res.send(result);
         })
         
+
+
+        
         // get user added recipe
         app.get('/api/user-recipe', async(req, res) => {
+            const recipes = await recipeCollection.find().toArray();
             const query = {}
             if (req.query.authorId) {
                 query.authorId = req.query.authorId;
-                if (req.authorId !== req.query.authorId) {
-                    return res.status(403).send({ message: "Forbidden access!"});
-                }
             }
-            const result = recipeCollection.find(query);
-            const recipes = await result.toArray();
-            res.send(recipes);
+            const result = await recipeCollection.find(query).toArray();
+            res.send(result);
         })
 
         // user plan and subscription api
