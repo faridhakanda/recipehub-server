@@ -107,7 +107,12 @@ async function run() {
             const result = await recipeCollection.find(query).toArray();
             res.send(result);
         })
-
+        // user recipe by user id and then recipe id
+        app.get('/api/user-recipe/:id', async(req, res) => {
+            const id = req.params.id;
+            const recipes = await recipeCollection.findOne({ _id: new ObjectId(id) })
+            res.send(recipes);
+        })
         // user plan and subscription api
         // get plan
         app.get('/api/plans', async(req, res) => {
