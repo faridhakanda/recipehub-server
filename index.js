@@ -26,6 +26,9 @@ const client = new MongoClient(uri, {
     }
 });
 
+
+
+
 async function run() {
     try {
         // await client.connect();
@@ -87,9 +90,9 @@ async function run() {
         // get user added recipe
         app.get('/api/user-recipe', async(req, res) => {
             const query = {}
-            if (req.query.userId) {
-                query.userId = req.query.userId;
-                if (req.user._id.toString() !== req.query.userId) {
+            if (req.query.authorId) {
+                query.authorId = req.query.authorId;
+                if (req.authorId !== req.query.authorId) {
                     return res.status(403).send({ message: "Forbidden access!"});
                 }
             }
