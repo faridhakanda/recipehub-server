@@ -77,6 +77,15 @@ async function run() {
                     {recipeName: { $regex: req.query.search, $options: 'i' }}
                 ]
             }
+            if (req.query.page) {
+                const page = req.query.page;
+                const perPage = req.query.perPage || 2;
+                const skipItems = (page - 1) * perPage;
+                const total = await recipeCollection.countDocuments(query);
+                const recipe = recipeCollection.find(query).skip(skipItems).limit(perPage);
+                const recipes = await recipe.toArray();
+                return res.send(recipes);
+            }
             const result = await recipeCollection.find(query);
             const recipe = await result.toArray();
             res.send(recipe);
