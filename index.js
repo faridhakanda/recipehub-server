@@ -98,6 +98,7 @@ async function run() {
 
         
         // get user added recipe
+        // user all recipe for crud operation
         app.get('/api/user-recipe', async(req, res) => {
             const recipes = await recipeCollection.find().toArray();
             const query = {}
