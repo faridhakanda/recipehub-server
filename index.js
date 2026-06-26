@@ -70,7 +70,14 @@ async function run() {
         })
 
         app.get('/api/recipe', async(req, res) => {
-            const result = await recipeCollection.find();
+            //console.log('server side search query: ', req.query);
+            const query = {};
+            if (req.query.search) {
+                query.$or = [
+                    {recipeName: { $regex: req.query.search, $options: 'i' }}
+                ]
+            }
+            const result = await recipeCollection.find(query);
             const recipe = await result.toArray();
             res.send(recipe);
         })
