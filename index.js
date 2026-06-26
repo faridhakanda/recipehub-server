@@ -114,6 +114,97 @@ async function run() {
             const recipes = await recipeCollection.findOne({ _id: new ObjectId(id) })
             res.send(recipes);
         })
+        // user recipe by user id and then recipe id
+        // for update
+        app.patch('/api/user-recipe/:id', async(req, res) => {
+            try {
+                const { id } = req.params;
+                const { authorId } = req.query;
+                const recipeData = req.body;
+                if (!id || !authorId) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'Recipe Id and AuthorId are require'
+                    })
+                }
+                const filter = {
+                    _id: new ObjectId(id),
+                    authorId: authorId
+                }
+                if (!filter) {
+                    return res.status(404).send({
+                        success: false,
+                        message: 'Recipe Id and Author Id not found!'
+                    })
+                }
+                const updatedDocument = {
+                    $set: {
+                        recipeName: recipeData.recipeName,
+                        category: recipeData.category,
+                        recipeImage: recipeData.recipeImage
+                    }
+                }
+                const result = await recipeCollection.updateOne(filter, updatedDocument);
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe Updated successfully!',
+                    data: result
+                })
+            } catch {
+                res.status(500).send({
+                    success: false,
+                    message: 'Error Updating Recipe!',
+                    error: error.message
+                });
+            }
+        })
+        // delete recipe by recipe id and author id
+        app.delete('/api/user-recipe/:id', async(req, res) => {
+            // const { id } = req.params;//.id;
+            // const { authorId } = req.params; //.authorId;
+            // const recipe = await recipeCollection.findOneAndDelete({
+            //     _id: id,
+            //     authorId: authorId
+            // });
+            // res.send(recipe);
+            
+            // here all of send previous had json
+            try {
+                const { id } = req.params;
+                const { authorId } = req.query;
+                if (!id || !authorId) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'Recipe Id and Author Id are required'
+                    });
+                }
+
+                const recipe = await recipeCollection.findOneAndDelete({
+                    _id: new ObjectId(id),
+                    authorId: authorId
+                });
+
+                if (!recipe) {
+                    return res.status(404).send({
+                        success: false,
+                        message: 'Recipe not found or you are not authorized to delete it!'
+                    });
+                }
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe Deleted successfully',
+                    data: recipe
+                });
+            } catch {
+                res.status(500).send({
+                    success: false,
+                    message: 'Error deleting recipe',
+                    error: error.message
+                });
+            }
+        });
+
+
         // user plan and subscription api
         // get plan
         app.get('/api/plans', async(req, res) => {
