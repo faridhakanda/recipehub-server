@@ -77,6 +77,9 @@ async function run() {
                     {recipeName: { $regex: req.query.search, $options: 'i' }}
                 ]
             }
+            if (req.query.category) {
+                query.category = req.query.category
+            }
             if (req.query.page) {
                 const page = req.query.page;
                 const perPage = req.query.perPage || 2;
