@@ -76,7 +76,8 @@ async function run() {
                 }
                 const updatedUserDocument = {
                     $set: {
-                        name: userData.name
+                        name: userData.name,
+                        image: userData.image,
                     }
                 }
                 const result = await userCollection.updateOne(filter, updatedUserDocument);
