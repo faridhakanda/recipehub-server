@@ -55,6 +55,45 @@ async function run() {
             res.send(users);
         })
         
+        app.patch('/api/auth/update-profile/:id', async(req, res) => {
+            try {
+                const { id } = req.params;
+                const userData = req.body;
+                if (!id) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'User ID is not valid!'
+                    });
+                }
+                const filter = {
+                    _id: new ObjectId(id)
+                }
+                if (!filter) {
+                    return res.status(404).send({
+                        success: false,
+                        message: 'User ID is not valid!'
+                    })
+                }
+                const updatedUserDocument = {
+                    $set: {
+                        name: userData.name
+                    }
+                }
+                const result = await userCollection.updateOne(filter, updatedUserDocument);
+                res.status(200).send({
+                    success: true,
+                    message: 'User profile updated successfully!',
+                    data: result
+                })
+
+            } catch {
+                res.status(500).send({
+                    success: false,
+                    message: 'Error Updating Profile!',
+                    error: error.message
+                });
+            }
+        })
         
         
 
