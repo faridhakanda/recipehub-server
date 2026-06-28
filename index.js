@@ -42,15 +42,124 @@ async function run() {
         const subscriptionCollection = DB.collection('subscriptions');
         const BuyRecipeCollection = DB.collection('buyrecipe');
         
+        // for verify user and admin with verify token
+        const sessionCollection = DB.collection('session');
+        
         console.log('Now I will make it protected!');
 
         const verifyToken = async(req, res, next) => {
-            console.log('headers: ', req.headers);
+            //console.log('headers: ', req.headers);
+            const authHeader = req.headers?.authorization;
+            //console.log(authHeader, 'authHeader');
+            const token = authHeader.split(' ')[1];
+            //console.log('token: ', token);
+
+            if (!authHeader) {
+                return res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!'
+                });
+            }
+            if (!token) {
+                return res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!',
+                })
+            }
+
+            const query = { token: token }
+            const session = await sessionCollection.findOne(query);
+            console.log(session, 'session');
+            const userId = session?.userId;
+            console.log(userId, 'user id');
+            const userQuery = {
+                _id: new ObjectId(userId)
+            }
+            console.log('userQuery: ', userQuery);
+            const user = await userCollection.findOne(userQuery);
+            console.log('user: ',  user);
+            console.log('user id of session: ', user?._id)
+            //req.user = user;
+            next();
         }
         //verifyToken('83')
+        
+
+        // for admin verify
+        const adminVerify = async(req, res, next) => {
+            console.log("admin verify", req.params);
+            const authHeader = req.headers?.authorization
+            if (!authHeader) {
+                return res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!',
+                });
+            }
+            
+            const token = authHeader.split(' ')[1];
+            if (!token) {
+                return  res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!'
+                });
+            }
+
+            const query = { token: token }
+            const session = await sessionCollection.findOne(query);
+            const userId = session?.userId;
+            const userQuery = {
+                _id: new ObjectId(userId)
+            }
+            const user = await userCollection.findOne(userQuery);
+            console.log('user role: ', user?.role);
+            if (!user?.role === 'admin') {
+                console.log('user is not admin!');
+                return res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!'
+                });
+            }
+            next();
+        }
+
+        // for user verify
+        const userVerify = async(req, res, next) => {
+            console.log("user verify", req.params);
+            const authHeader = req.headers?.authorization
+            if (!authHeader) {
+                return res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!',
+                });
+            }
+            
+            const token = authHeader.split(' ')[1];
+            if (!token) {
+                return  res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!'
+                });
+            }
+
+            const query = { token: token }
+            const session = await sessionCollection.findOne(query);
+            const userId = session?.userId;
+            const userQuery = {
+                _id: new ObjectId(userId)
+            }
+            const user = await userCollection.findOne(userQuery);
+            console.log('user role in userverify: ', user?.role);
+            if (user?.role === "user") {
+                return res.status(401).send({
+                    success: false,
+                    message: 'Unauthorized to access!'
+                });
+            }
+            next();
+        }
 
         // here all api for the recipehub project
-        app.get('/api/users', async(req, res) => {
+        app.get('/api/users', verifyToken, adminVerify, async(req, res) => {
             const allUsers = await userCollection.find();
             const users = await allUsers.toArray();
             res.send(users);
@@ -110,7 +219,7 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/api/recipe', async(req, res) => {
+        app.get('/api/recipe', verifyToken, userVerify, adminVerify, async(req, res) => {
             //console.log('server side search query: ', req.query);
             const query = {};
             if (req.query.search) {
