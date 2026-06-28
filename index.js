@@ -42,6 +42,10 @@ async function run() {
         const subscriptionCollection = DB.collection('subscriptions');
         const BuyRecipeCollection = DB.collection('buyrecipe');
         
+        const favoriteCollection = DB.collection('favorite');
+        const savedCollection = DB.collection('saved');
+        const likeCollection = DB.collection('like');
+        
         // for verify user and admin with verify token
         const sessionCollection = DB.collection('session');
         
@@ -49,38 +53,53 @@ async function run() {
 
         const verifyToken = async(req, res, next) => {
             //console.log('headers: ', req.headers);
-            const authHeader = req.headers?.authorization;
-            //console.log(authHeader, 'authHeader');
-            const token = authHeader.split(' ')[1];
-            //console.log('token: ', token);
+            try {
+                const authHeader = req.headers?.authorization;
+                //console.log(authHeader, 'authHeader');
+                
+                //console.log('token: ', token);
 
-            if (!authHeader) {
-                return res.status(401).send({
+                if (!authHeader) {
+                    return res.status(401).send({
+                        success: false,
+                        message: 'Unauthorized to access!'
+                    });
+                }
+                const token = authHeader.split(' ')[1];
+                if (!token) {
+                    return res.status(401).send({
+                        success: false,
+                        message: 'Unauthorized to access!',
+                    })
+                }
+
+                const query = { token: token }
+                const session = await sessionCollection.findOne(query);
+                console.log(session, 'session');
+                const userId = session?.userId;
+                console.log(userId, 'user id');
+                const userQuery = {
+                    _id: new ObjectId(userId)
+                }
+                console.log('userQuery: ', userQuery);
+                const user = await userCollection.findOne(userQuery);
+                console.log('user: ',  user);
+                console.log('user id of session: ', user?._id)
+                //req.user = user;
+
+                // attach user to request object for user in route handler
+                req.user = user;
+                req.userId = userId;
+                req.token = token;
+                next();
+            } catch(error) { 
+                console.error("Error in verifyToken Middleware: ", error)
+                return res.status(500).send({
                     success: false,
-                    message: 'Unauthorized to access!'
-                });
-            }
-            if (!token) {
-                return res.status(401).send({
-                    success: false,
-                    message: 'Unauthorized to access!',
+                    message: 'Internal server error during authentication!'
                 })
             }
-
-            const query = { token: token }
-            const session = await sessionCollection.findOne(query);
-            console.log(session, 'session');
-            const userId = session?.userId;
-            console.log(userId, 'user id');
-            const userQuery = {
-                _id: new ObjectId(userId)
-            }
-            console.log('userQuery: ', userQuery);
-            const user = await userCollection.findOne(userQuery);
-            console.log('user: ',  user);
-            console.log('user id of session: ', user?._id)
-            //req.user = user;
-            next();
+            
         }
         //verifyToken('83')
         
@@ -441,7 +460,7 @@ async function run() {
             const subscriberInformation = {
                 ...data,
                 userId: data.userId,
-                transactionId: data.transactionId || null,
+                //transactionId: data.transactionId || null,
                 subscriptionId: data.subscriptionId || null,
                 status: 'active',
                 createdAt: new Date()
