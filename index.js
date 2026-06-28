@@ -40,6 +40,7 @@ async function run() {
         const recipeCollection = DB.collection('recipes');
         const plansCollection = DB.collection('plans');
         const subscriptionCollection = DB.collection('subscriptions');
+        const BuyRecipeCollection = DB.collection('buyrecipe');
         
         console.log('Now I will make it protected!');
 
@@ -282,6 +283,47 @@ async function run() {
             //     return res.json({ name: 'free', maxRecipePerUser: 2 });
             // }
             res.send(plan);
+        })
+        // app.post('/api/recipe', async(req, res) => {
+        //     const recipe = req.body;
+        //     const newRecipe = {
+        //         ...recipe,
+        //         createdAt: new Date(),
+        //         updatedAt: new Date()
+        //     }
+        //     const result = await recipeCollection.insertOne(newRecipe);
+        //     res.send(result);
+        // })
+        app.post('/api/buy-recipe', async(req, res) => {
+            // const data = req.body;
+            // const RecipeBuyData = {
+            //     ...data,
+            //     createdAt: new Date()
+            // }
+            // const result = await BuyRecipeCollection.insertOne(RecipeBuyData);
+            // res.send(result);
+
+            try {
+                const data = req.body;
+                const RecipeBuyData = {
+                    ...data,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }
+                const result = await BuyRecipeCollection.insertOne(RecipeBuyData);
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe Purchased successfully',
+                    data: result
+                });
+            } catch(error) {
+                console.log('Buy Recipe error: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to purchase recipe'
+                })
+            }
+
         })
         // subscription api
         app.post('/api/subscriptions', async(req, res) => {
