@@ -149,7 +149,7 @@ async function run() {
             }
             const user = await userCollection.findOne(userQuery);
             console.log('user role in userverify: ', user?.role);
-            if (user?.role === "user") {
+            if (!user?.role === "user") {
                 return res.status(401).send({
                     success: false,
                     message: 'Unauthorized to access!'
@@ -218,8 +218,9 @@ async function run() {
             const result = await recipe.toArray();
             res.send(result);
         })
-
-        app.get('/api/recipe', verifyToken, userVerify, adminVerify, async(req, res) => {
+        
+        //verifyToken, userVerify,
+        app.get('/api/recipe',  async(req, res) => {
             //console.log('server side search query: ', req.query);
             const query = {};
             if (req.query.search) {
