@@ -423,15 +423,30 @@ async function run() {
         //     const result = await recipeCollection.insertOne(newRecipe);
         //     res.send(result);
         // })
-        app.post('/api/buy-recipe', async(req, res) => {
-            // const data = req.body;
-            // const RecipeBuyData = {
-            //     ...data,
-            //     createdAt: new Date()
-            // }
-            // const result = await BuyRecipeCollection.insertOne(RecipeBuyData);
-            // res.send(result);
 
+
+        // get my purchased recipe
+        app.get('/api/my-purchase/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const userPurchasedRecipe = await BuyRecipeCollection.find({
+                    userId: id
+                }).toArray();
+                res.status(200).send({
+                    success: true,
+                    message: 'You purchased recipe list!',
+                    data: userPurchasedRecipe
+                });
+            } catch(error) {
+                console.error('Error fetching your purchase recipes: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to fetch you purcchase recipe!'
+                });
+            }
+        })
+        app.post('/api/buy-recipe', async(req, res) => {
+            
             try {
                 const data = req.body;
                 const RecipeBuyData = {
@@ -452,6 +467,66 @@ async function run() {
                     message: 'Failed to purchase recipe'
                 })
             }
+        
+            // for purchasing recipe
+            // try { 
+            // const { id } = req.params;
+            //     const { userId, userName, recipe } = req.body;
+
+            //     if (!userId) {
+            //         return res.status(400).send({
+            //             success: false,
+            //             message: 'User id is required!'
+            //         });
+            //     }
+
+            //     const existingLike = await likeCollection.findOne({
+            //         userId: userId,
+            //         "recipe._id": id
+            //     });
+            //     if (existingLike) {
+            //         return res.status(200).send({
+            //             success: true,
+            //             message: 'You have already liked this recipe!',
+            //             alreadyLiked: true
+            //         });
+            //     }
+                
+            //     const data = req.body;
+            //     const likeData = {
+            //         ...data,
+            //         createdAt: new Date()
+            //     }
+            //     const result = await likeCollection.insertOne(likeData);
+                
+            //     const filterRecipe = {
+            //         _id: new ObjectId(id)
+            //     }
+            //     // added the code for update like count
+                
+            //     const likesCountRecipe = await recipeCollection.updateOne(filterRecipe, {
+            //         $inc: { likesCount: 1 }
+            //     });
+
+            //     res.status(200).send({
+            //         success: true,
+            //         message: 'Recipe Like successfully!',
+            //         //data: result, // this is old code
+            //         data : {
+            //             result: result,
+            //             likesCountRecipe: likesCountRecipe,
+            //         },
+            //         alreadyLiked: false
+            //     });
+            // } catch(error) {
+            //     console.error('Error in like recipe: ', error);
+            //     res.status(500).send({
+            //         success: false,
+            //         message: 'Failed to like recipe',
+            //         error: error.message
+            //     });
+         
+                
 
         })
         // subscription api
@@ -567,76 +642,151 @@ async function run() {
                     error: error.message
                 });
             }
+        })
+
+
+        // for saved recipe for specific user 
+        // for get user all saved recipe 
+        // UserId will be use here params for get
+        // saved recipe post here will user recipe id
+        // for preventing duplicate recipe saved
+        app.get('/api/recipe-save/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const userSaved = await savedCollection.find({
+                    userId: id
+                }).toArray();
+                res.status(200).send({
+                    success: true,
+                    message: 'Uesr saved recipe by user id',
+                    data: userSaved
+                });
             
-            // try {
-            //     const data = req.body;
-            //     const likeData = {
-            //         ...data,
-            //         createdAt: new Date(),
-            //     }
+            } catch(error) {
+                console.error('Error fetching user likes: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to fetch user likes'
+                });
+            }
+        })
+        app.post('/api/recipe-save/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const { userId, userName, recipe } = req.body;
+
+                if (!userId) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'User id is required!'
+                    });
+                }
                 
-            //     //console.log('recipe id:', data.recipe._id);
-            //     const result = likeCollection.insertOne(likeData);
-            //     res.status(200).send({
-            //         success: true,
-            //         message: 'Like successfully the recipe!',
-            //         data: result
-            //     });
-            // } catch(error) {
-            //     res.status(500).send({
-            //         success: false,
-            //         message: 'Like is not added!'
-            //     });
-            // }
+                const existingSaved = await savedCollection.findOne({
+                    userId: userId,
+                    "recipe._id": id
+                });
+                if (existingSaved) {
+                    return res.status(200).send({
+                        success: true,
+                        message: 'You have already saved this recipe!',
+                        alreadySaved: true
+                    });
+                }
+                
+                const data = req.body;
+                const savedData = {
+                    ...data,
+                    createdAt: new Date()
+                }
+                const result = await savedCollection.insertOne(savedData);
 
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe saved successfully!',
+                    data: result,
+                    alreadySaved: false
+                });
+            } catch(error) {
+                console.error('Error in saved recipe: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to save recipe',
+                    error: error.message
+                });
+            }
+        })
+        
+        // for favorite recipe for specific user 
+        // for get user all favorite recipe 
+        // UserId will be use here params for get
+        // favorite recipe post here will user recipe id
+        // for preventing duplicate recipe favorite
+        app.get('/api/recipe-favorite/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const userSaved = await favoriteCollection.find({
+                    userId: id
+                }).toArray();
+                res.status(200).send({
+                    success: true,
+                    message: 'Uesr saved recipe by user id',
+                    data: userSaved
+                });
+            
+            } catch(error) {
+                console.error('Error fetching user favorite recipes: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to fetch user favorite recipes'
+                });
+            }
+        })
+        app.post('/api/recipe-favorite/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const { userId, userName, recipe } = req.body;
 
-            // try {
-            //     const { id } = req.params;
-            //     const { userId, userName } = req.body;
-            //     const recipeId = id;
-            //     if (!userId) {
-            //         return res.status(400).send({
-            //             success: false,
-            //             message: 'User id is require!'
-            //         });
-            //     }
-            //     const existingLike = await likeCollection.findOne(
-            //         {
-            //             userId: userId,
-            //             recipeId: recipeId
-            //         }
-            //     );
-            //     if (existingLike) {
-            //         return res.status(200).send({
-            //             success: true,
-            //             message: 'You have already like the recipe!',
-            //             alreadyLike: true
-            //         });
-            //     }
+                if (!userId) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'User id is required!'
+                    });
+                }
 
-            //     const { recipe } = req.body;
-            //     const likeData = {
-            //         // ..recipe,
-            //         // userId: userId,
-            //         // userName: userName,
-            //         ...recipe,
-            //         createdAt: new Date()
-            //     }
-            //     const result = await likeCollection.insertOne(likeData);
-            //     res.status(200).send({
-            //         success: true,
-            //         message: 'Recipe liked successfully!',
-            //         data: result,
-            //         alreadyLike: false
-            //     })
-            // } catch(error) {
-            //     console.error('Error in like recipe: ', error);
-            //     res.status(500).send({
-            //         success: false,
-            //         message: 'Failed to like recipe!',
-            //         error: error.message
-            //     });
-            // }
+                const existingFavorite = await favoriteCollection.findOne({
+                    userId: userId,
+                    "recipe._id": id
+                });
+                if (existingFavorite) {
+                    return res.status(200).send({
+                        success: true,
+                        message: 'You have already added favorite this recipe!',
+                        alreadyFavorite: true
+                    });
+                }
+                
+                const data = req.body;
+                const favoriteData = {
+                    ...data,
+                    createdAt: new Date()
+                }
+                const result = await favoriteCollection.insertOne(favoriteData);
+
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe added successfully in favorite!',
+                    data: result,
+                    alreadyFavorite: false
+                });
+            } catch(error) {
+                console.error('Error in favorite recipe add: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to favorite recipe add',
+                    error: error.message
+                });
+            }
         })
 
         console.log("Pinged your deployment. You successfully connected your MongoDB!");
