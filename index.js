@@ -183,7 +183,7 @@ async function run() {
             res.send(users);
         })
         
-        app.patch('/api/auth/update-profile/:id', async(req, res) => {
+        app.patch('/api/auth/update-profile/:id', verifyToken, userVerify, async(req, res) => {
             try {
                 const { id } = req.params;
                 const userData = req.body;
@@ -271,7 +271,7 @@ async function run() {
             const result = await recipeCollection.findOne({ _id: new ObjectId(id) });
             res.send(result);
         })
-        app.post('/api/recipe', async(req, res) => {
+        app.post('/api/recipe', verifyToken, userVerify, async(req, res) => {
             const recipe = req.body;
             const newRecipe = {
                 ...recipe,
@@ -293,7 +293,7 @@ async function run() {
         
         // get user added recipe
         // user all recipe for crud operation
-        app.get('/api/user-recipe', async(req, res) => {
+        app.get('/api/user-recipe', verifyToken, userVerify, async(req, res) => {
             const recipes = await recipeCollection.find().toArray();
             const query = {}
             if (req.query.authorId) {
@@ -303,14 +303,14 @@ async function run() {
             res.send(result);
         })
         // user recipe by user id and then recipe id
-        app.get('/api/user-recipe/:id', async(req, res) => {
+        app.get('/api/user-recipe/:id', verifyToken, userVerify, async(req, res) => {
             const id = req.params.id;
             const recipes = await recipeCollection.findOne({ _id: new ObjectId(id) })
             res.send(recipes);
         })
         // user recipe by user id and then recipe id
         // for update
-        app.patch('/api/user-recipe/:id', async(req, res) => {
+        app.patch('/api/user-recipe/:id', verifyToken, userVerify, async(req, res) => {
             try {
                 const { id } = req.params;
                 const { authorId } = req.query;
@@ -353,7 +353,7 @@ async function run() {
             }
         })
         // delete recipe by recipe id and author id
-        app.delete('/api/user-recipe/:id', async(req, res) => {
+        app.delete('/api/user-recipe/:id', verifyToken, userVerify, async(req, res) => {
             // const { id } = req.params;//.id;
             // const { authorId } = req.params; //.authorId;
             // const recipe = await recipeCollection.findOneAndDelete({
@@ -450,7 +450,7 @@ async function run() {
                 });
             }
         })
-        app.post('/api/buy-recipe', async(req, res) => {
+        app.post('/api/buy-recipe', verifyToken, userVerify, async(req, res) => {
             
             try {
                 const data = req.body;
@@ -535,7 +535,7 @@ async function run() {
 
         })
         // subscription api
-        app.post('/api/subscriptions', async(req, res) => {
+        app.post('/api/subscriptions', verifyToken, userVerify, async(req, res) => {
             const data = req.body;
             const subscriberInformation = {
                 ...data,
