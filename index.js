@@ -183,6 +183,73 @@ async function run() {
             res.send(users);
         })
         
+        // for delete api: api/admin/users/${userId}
+        // for action api: api/admin/users/${userId}
+        app.patch('/api/admin/users/:userId', verifyToken, adminVerify, async(req, res) => {
+            try { 
+                const { userId } = req.params;
+                const { action } = await request.json();
+                
+                let update = {};
+                if (action === 'block') {
+                    update = { status: 'blocked', blockedAt: new Date() };
+                } else if (action === 'unblock') {
+                    update = { status: 'active', blockedAt: null};
+                } else {
+                    return NextResponse.json(
+                        { success: false, message: 'Invalid action'},
+                        { status: 400 }
+                    );
+                }
+                const result = await userCollection.findOneAndUpdate(
+                    { _id: new ObjectId(userId) },
+                    { $set: update },
+                    { returnDocument: 'after' }
+                );
+                if (!result) {
+                    return NextResponse.json(
+                        { success: false, message: 'User not found' },
+                        { status: 404 }
+                    );
+                }
+                return NextResponse.json({
+                    success: true,
+                    message: `User ${action}ed successfully!`,
+                    user: result
+                });
+            } catch (error) {
+                console.error('Error updating user: ', error);
+                return NextResponse.json(
+                    { success: false, message: error.message },
+                    { status: 500 }
+                );
+            }
+        })
+        // for user delete 
+        app.delete('/api/admin/users/:userId', verifyToken, adminVerify, async(req, res) => {
+            try {
+                const { userId } = req.params;
+                const result = await userCollection.deleteOne({ _id: new ObjectId(userId) });
+                if (result.deletedCount === 0) {
+                    return res.status(404).send(
+                        { success: false, message: 'User not found'},
+                        // { status: 404 }
+                    );
+                }
+                return res.status(200).send({
+                    success: true,
+                    message: 'User deleted successfully!'
+                });
+            } catch (error) {
+                console.error('Error deleting user: ', error);
+                return res.status(500).send(
+                    { success: false, message: error.message },
+                    
+                );
+            }
+        })
+        
+        // user update profile api
         app.patch('/api/auth/update-profile/:id', verifyToken, userVerify, async(req, res) => {
             try {
                 const { id } = req.params;
