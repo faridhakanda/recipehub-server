@@ -41,7 +41,6 @@ async function run() {
         const plansCollection = DB.collection('plans');
         const subscriptionCollection = DB.collection('subscriptions');
         const BuyRecipeCollection = DB.collection('buyrecipe');
-        
         const favoriteCollection = DB.collection('favorite');
         const savedCollection = DB.collection('saved');
         const likeCollection = DB.collection('like');
@@ -283,8 +282,14 @@ async function run() {
             res.send(result);
         })
         
+        // get all popular recipes
+        app.get('/api/popular-recipe', async(req, res) => {
+            const recipes = await recipeCollection.find().sort({ likesCount: -1 }).limit(3);
+            const result = await recipes.toArray()
+            return res.send(result);
+        });
 
-
+        
         
         // get user added recipe
         // user all recipe for crud operation
