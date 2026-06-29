@@ -44,7 +44,7 @@ async function run() {
         const favoriteCollection = DB.collection('favorite');
         const savedCollection = DB.collection('saved');
         const likeCollection = DB.collection('like');
-        
+        const featureCollection = DB.collection('features');
         // for verify user and admin with verify token
         const sessionCollection = DB.collection('session');
         
@@ -175,6 +175,121 @@ async function run() {
             }
             next();
         }
+        
+        // admin all api
+        app.post('/api/admin/feature-recipe/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                //const { recipe } = req.body;
+                const data = req.body;
+                if (!id) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'Recipe id is required!'
+                    });
+                }
+                const recipe = await recipeCollection.findOne({ _id: new ObjectId(id) });
+                if (!recipe) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Recipe not found!'
+                    });
+                }
+                const existingRecipe = await featureCollection.findOne({
+                    //_id: new ObjectId(id)
+                    "recipe._id": id
+                });
+                if (existingRecipe) {
+                    await featureCollection.deleteOne({ "recipe._id": id });
+                    await recipeCollection.updateOne(
+                        { _id: new ObjectId(id) },
+                        { $set: { isFeatured: false }}
+                    )
+                    return res.status(200).send({
+                        success: true,
+                        message: 'You have already feature this recipe!',
+                        //alreadyLiked: true
+                        isFeatured: false
+                    });
+                }
+                
+                const featureData = {
+                    recipe: data,
+                    recipeId: id,
+                    createdAt: new Date()
+                };
+                const result = await featureCollection.insertOne(featureData);
+
+                await recipeCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { isFeatured: true }}
+                )
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe featured successfully!',
+                    data: result,
+                    isFeatured: true
+                })
+                // const data = req.body;
+                // const featureData = {
+                //     ...data,
+                //     createdAt: new Date()
+                // }
+                // const result = await featureCollection.insertOne(likeData);
+                
+                // const filterRecipe = {
+                //     _id: new ObjectId(id)
+                // }
+                // added the code for update like count
+                
+                // const likesCountRecipe = await recipeCollection.updateOne(filterRecipe, {
+                //     $inc: { likesCount: 1 }
+                // });
+
+                // res.status(200).send({
+                //     success: true,
+                //     message: 'Recipe features added successfully!',
+                //     data: result, // this is old code
+                //     // data : {
+                //     //     result: result,
+                //     //     likesCountRecipe: likesCountRecipe,
+                //     // },
+                //     // alreadyLiked: false
+                // });
+            } catch(error) {
+                console.error('Error in feature recipe: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to feature recipe',
+                    error: error.message
+                });
+            }
+        })
+
+        app.delete('/api/admin/recipes/:recipeId', verifyToken, adminVerify, async(req, res) => {
+            try {
+                const { recipeId } = req.params;
+                const result = await recipeCollection.deleteOne({ _id: new ObjectId(recipeId) });
+                if (result.deletedCount === 0) {
+                    return res.status(404).send(
+                        { success: false, message: 'User not found'},
+                        // { status: 404 }
+                    );
+                }
+                return res.status(200).send({
+                    success: true,
+                    message: 'User deleted successfully!'
+                });
+                
+                
+            } catch(error) {
+                console.error('Error deleting recipe: ', error);
+                return res.status(500).send(
+                    { success: false, message: error.message },
+                    
+                );
+            }
+        })
 
         // here all api for the recipehub project
         app.get('/api/users', verifyToken, adminVerify, async(req, res) => {
@@ -188,7 +303,7 @@ async function run() {
         app.patch('/api/admin/users/:userId', verifyToken, adminVerify, async(req, res) => {
             try { 
                 const { userId } = req.params;
-                const { action } = await request.json();
+                const { action } = req.body;
                 
                 let update = {};
                 if (action === 'block') {
@@ -318,7 +433,7 @@ async function run() {
             }
             if (req.query.page) {
                 const page = req.query.page;
-                const perPage = req.query.perPage || 2;
+                const perPage = req.query.perPage || 20;
                 const skipItems = (page - 1) * perPage;
                 const total = await recipeCollection.countDocuments(query);
                 const recipe = recipeCollection.find(query).skip(skipItems).limit(perPage);
@@ -349,6 +464,12 @@ async function run() {
             res.send(result);
         })
         
+        // get all features recipes
+        app.get('/api/features', async(req, res) => {
+            const recipes = await featureCollection.find().limit(3);
+            const result = await recipes.toArray();
+            return res.send(result);
+        })
         // get all popular recipes
         app.get('/api/popular-recipe', async(req, res) => {
             const recipes = await recipeCollection.find().sort({ likesCount: -1 }).limit(3);
