@@ -481,6 +481,164 @@ async function run() {
         
         })
 
+
+
+        // for user recipe like, save and favorite
+        // here these three interaction user 
+        // will be verifed and authenticated
+        // here id for user to get user all like recipe
+        // id in recipe user only like one recipe by id not two time 
+        // like a single recipe
+        app.get('/api/recipe-like/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const userLikes = await likeCollection.find({
+                    userId: id
+                }).toArray();
+                res.status(200).send({
+                    success: true,
+                    message: 'Uesr liked recipe by user id',
+                    data: userLikes
+                });
+            
+            } catch(error) {
+                console.error('Error fetching user likes: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to fetch user likes'
+                });
+            }
+        })
+        app.post('/api/recipe-like/:id', verifyToken, userVerify, async(req, res) => {
+            try {
+                const { id } = req.params;
+                const { userId, userName, recipe } = req.body;
+
+                if (!userId) {
+                    return res.status(400).send({
+                        success: false,
+                        message: 'User id is required!'
+                    });
+                }
+
+                const existingLike = await likeCollection.findOne({
+                    userId: userId,
+                    "recipe._id": id
+                });
+                if (existingLike) {
+                    return res.status(200).send({
+                        success: true,
+                        message: 'You have already liked this recipe!',
+                        alreadyLiked: true
+                    });
+                }
+                
+                const data = req.body;
+                const likeData = {
+                    ...data,
+                    createdAt: new Date()
+                }
+                const result = await likeCollection.insertOne(likeData);
+                
+                const filterRecipe = {
+                    _id: new ObjectId(id)
+                }
+                // added the code for update like count
+                
+                const likesCountRecipe = await recipeCollection.updateOne(filterRecipe, {
+                    $inc: { likesCount: 1 }
+                });
+
+                res.status(200).send({
+                    success: true,
+                    message: 'Recipe Like successfully!',
+                    //data: result, // this is old code
+                    data : {
+                        result: result,
+                        likesCountRecipe: likesCountRecipe,
+                    },
+                    alreadyLiked: false
+                });
+            } catch(error) {
+                console.error('Error in like recipe: ', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'Failed to like recipe',
+                    error: error.message
+                });
+            }
+            
+            // try {
+            //     const data = req.body;
+            //     const likeData = {
+            //         ...data,
+            //         createdAt: new Date(),
+            //     }
+                
+            //     //console.log('recipe id:', data.recipe._id);
+            //     const result = likeCollection.insertOne(likeData);
+            //     res.status(200).send({
+            //         success: true,
+            //         message: 'Like successfully the recipe!',
+            //         data: result
+            //     });
+            // } catch(error) {
+            //     res.status(500).send({
+            //         success: false,
+            //         message: 'Like is not added!'
+            //     });
+            // }
+
+
+            // try {
+            //     const { id } = req.params;
+            //     const { userId, userName } = req.body;
+            //     const recipeId = id;
+            //     if (!userId) {
+            //         return res.status(400).send({
+            //             success: false,
+            //             message: 'User id is require!'
+            //         });
+            //     }
+            //     const existingLike = await likeCollection.findOne(
+            //         {
+            //             userId: userId,
+            //             recipeId: recipeId
+            //         }
+            //     );
+            //     if (existingLike) {
+            //         return res.status(200).send({
+            //             success: true,
+            //             message: 'You have already like the recipe!',
+            //             alreadyLike: true
+            //         });
+            //     }
+
+            //     const { recipe } = req.body;
+            //     const likeData = {
+            //         // ..recipe,
+            //         // userId: userId,
+            //         // userName: userName,
+            //         ...recipe,
+            //         createdAt: new Date()
+            //     }
+            //     const result = await likeCollection.insertOne(likeData);
+            //     res.status(200).send({
+            //         success: true,
+            //         message: 'Recipe liked successfully!',
+            //         data: result,
+            //         alreadyLike: false
+            //     })
+            // } catch(error) {
+            //     console.error('Error in like recipe: ', error);
+            //     res.status(500).send({
+            //         success: false,
+            //         message: 'Failed to like recipe!',
+            //         error: error.message
+            //     });
+            // }
+        })
+
         console.log("Pinged your deployment. You successfully connected your MongoDB!");
     } finally {
         //await client.close();
